@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto 2D + 3D Explainer Maker</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071321;color:#eef5ff;font:15px system-ui}header{padding:14px 16px;border-bottom:1px solid #29405d}h1{font-size:20px;margin:0}main{display:grid;grid-template-columns:minmax(280px,370px) 1fr;gap:14px;padding:14px;max-width:1400px;margin:auto}.panel{background:#102036;border:1px solid #29405d;border-radius:14px;padding:13px;min-width:0}h2{font-size:16px;margin:4px 0 10px}label{display:block;color:#b9c9dc;margin:9px 0 4px;font-size:13px}input,textarea,select{width:100%;padding:9px;border-radius:8px;border:1px solid #3a5575;background:#071321;color:white}textarea{min-height:54px}button{padding:10px 12px;border:0;border-radius:8px;background:#f4ce57;color:#152033;font-weight:700;margin:5px 3px 5px 0}.secondary{background:#304b6d;color:white}.node{border:1px solid #35506f;border-radius:9px;padding:9px;margin:9px 0}.stage{aspect-ratio:16/9;width:100%;background:#020812;border-radius:10px;overflow:hidden}canvas{width:100%;height:100%;display:block}.hint{font-size:12px;color:#a9bad0;line-height:1.5}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions{display:flex;flex-wrap:wrap;gap:4px}@media(max-width:850px){main{grid-template-columns:1fr;padding:8px}}
+</style></head><body>
+<header><h1>🎬 Auto 2D + 3D Explainer Maker</h1><small>आसान ऑटोमैटिक एनिमेशन • फोटो • 16:9 वीडियो</small></header>
+<main><section class="panel"><h2>वीडियो सेटिंग्स</h2>
+<label>मुख्य शीर्षक</label><input id="title" value="MLC चुनाव 2026">
+<label>सबटाइटल</label><input id="sub" value="महाराष्ट्र • कर्नाटक • उत्तर प्रदेश">
+<div class="row"><div><label>Animation स्टाइल</label><select id="style"><option value="2d">2D Animation</option><option value="3d">3D Look Animation</option></select></div><div><label>अवधि (सेकंड)</label><input id="duration" type="number" value="60" min="10" max="180"></div></div>
+<label>ऑटो लेआउट</label><select id="layout"><option value="auto">Automatic — शाखाएँ खुद व्यवस्थित</option><option value="circle">Circle — गोल लेआउट</option></select>
+<div id="nodes"></div><div class="actions"><button id="add">+ शाखा जोड़ें</button><button id="sample" class="secondary">नमूना रीसेट</button></div>
+<hr><div class="actions"><button id="play" class="secondary">▶ एनिमेशन देखें</button><button id="export">⬇ वीडियो रिकॉर्ड करें</button></div>
+<p class="hint" id="status">रिकॉर्डिंग WebM में सेव होगी। MP4 बनाने के लिए डाउनलोड वीडियो CapCut में खोलकर MP4 Export करें। रिकॉर्डिंग के समय पेज खुला रखें।</p>
+</section><section class="panel"><h2>लाइव प्रीव्यू · 16:9</h2><div class="stage"><canvas id="c" width="1280" height="720"></canvas></div>
+<div class="actions"><button class="secondary" id="png">PNG इमेज सेव करें</button><button class="secondary" id="auto">पूरा एनिमेशन ऑटो चलाएँ</button></div>
+<p class="hint">हर शाखा में फोटो अपलोड कर सकते हो। 3D मोड में कार्ड, गहराई और कैमरा-जैसा मूवमेंट दिखेगा। यह हल्का 3D-look इफेक्ट है, असली 3D मॉडलिंग नहीं।</p></section></main>
+<script>
+const initial=[["MLC क्या है?","विधान परिषद का सदस्य • MLA से अलग","#a78bfa"],["महाराष्ट्र","महायुति की बढ़त • कांग्रेस को झटका","#fb557c"],["कर्नाटक","BJP–JDS का प्रदर्शन • कांग्रेस पर सवाल","#28c99a"],["उत्तर प्रदेश","वाराणसी और अयोध्या में BJP उम्मीदवारों की हार","#39a9ff"],["निष्कर्ष","स्थानीय मतदाता और क्षेत्रीय मुद्दे अहम","#f4c84a"]];
+let data=initial.map(a=>({name:a[0],detail:a[1],color:a[2],img:null}));
+const $=id=>document.getElementById(id),c=$("c"),ctx=c.getContext("2d");
+function editors(){$("nodes").innerHTML="";data.forEach((n,i)=>{let d=document.createElement("div");d.className="node";d.innerHTML=`<b>शाखा ${i+1}</b><button data-del="${i}" style="float:right;background:#783b4b;color:white">हटाएँ</button><label>शीर्षक</label><input data-f="name" data-i="${i}" value="${esc(n.name)}"><label>जानकारी</label><textarea data-f="detail" data-i="${i}">${esc(n.detail)}</textarea><label>रंग</label><input type="color" data-f="color" data-i="${i}" value="${n.color}"><label>फोटो अपलोड</label><input type="file" accept="image/*" data-file="${i}"><small class="hint">${n.img?'फोटो लग गई है':'चाहें तो फोटो जोड़ें'}</small>`;$("nodes").append(d)})}
+function esc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+$("nodes").addEventListener("input",e=>{let i=+e.target.dataset.i,f=e.target.dataset.f;if(f){data[i][f]=e.target.value;draw(99)}});
+$("nodes").addEventListener("change",e=>{if(e.target.dataset.file!==undefined&&e.target.files[0]){let i=+e.target.dataset.file,r=new FileReader();r.onload=()=>{let im=new Image();im.onload=()=>{data[i].img=im;editors();draw(99)};im.src=r.result};r.readAsDataURL(e.target.files[0])}});
+$("nodes").addEventListener("click",e=>{if(e.target.dataset.del!==undefined){data.splice(+e.target.dataset.del,1);editors();draw(99)}});
+$("add").onclick=()=>{data.push({name:"नई शाखा",detail:"अपनी जानकारी लिखें",color:"#38bdf8",img:null});editors();draw(99)};
+$("sample").onclick=()=>{data=initial.map(a=>({name:a[0],detail:a[1],color:a[2],img:null}));editors();draw(99)};
+function rr(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=3;ctx.stroke()}
+function draw(t=99){let is3d=$("style").value==="3d";ctx.clearRect(0,0,1280,720);let g=ctx.createLinearGradient(0,0,1280,720);g.addColorStop(0,is3d?"#102c50":"#0b2039");g.addColorStop(1,"#020711");ctx.fillStyle=g;ctx.fillRect(0,0,1280,720);
+if(is3d){ctx.strokeStyle="rgba(100,170,230,.13)";ctx.lineWidth=1;for(let i=0;i<12;i++){ctx.beginPath();ctx.moveTo(i*120,0);ctx.lineTo(i*120,720);ctx.stroke()}for(let j=0;j<8;j++){ctx.beginPath();ctx.moveTo(0,j*100);ctx.lineTo(1280,j*100);ctx.stroke()}}
+ctx.textAlign="center";ctx.fillStyle="#f6d66d";ctx.font="bold 46px system-ui";ctx.fillText($("title").value,640,68);ctx.fillStyle="#c5d5e8";ctx.font="23px system-ui";ctx.fillText($("sub").value,640,105);
+let dur=Math.max(10,+$("duration").value||60),per=(dur-4)/Math.max(1,data.length),centerY=365;
+if(is3d){ctx.save();ctx.shadowColor="#000";ctx.shadowBlur=28;ctx.shadowOffsetY=18;rr(490,290,300,130,20,"#244d78","#f4ce57");ctx.restore();ctx.fillStyle="white";ctx.font="bold 34px system-ui";ctx.fillText("मुख्य विषय",640,365)}
+else{rr(490,290,300,125,22,"#172f4d","#f4ce57");ctx.fillStyle="white";ctx.font="bold 36px system-ui";ctx.fillText("मुख्य विषय",640,365)}
+data.forEach((n,i)=>{let a=-Math.PI/2+i*2*Math.PI/Math.max(1,data.length),p=t===99?1:Math.max(0,Math.min(1,(t-(3+i*per))/1.6));if(!p)return;
+let px=640+Math.cos(a)*410,py=centerY+Math.sin(a)*(is3d?230:220);let w=290,h=130;
+ctx.save();ctx.globalAlpha=p;ctx.strokeStyle=n.color;ctx.lineWidth=is3d?7:5;ctx.beginPath();ctx.moveTo(640+Math.cos(a)*155,centerY+Math.sin(a)*65);ctx.lineTo(px,py);ctx.stroke();
+if(is3d){ctx.shadowColor="#000";ctx.shadowBlur=22;ctx.shadowOffsetX=10;ctx.shadowOffsetY=14;rr(px-w/2,py-h/2,w,h,17,"#173554",n.color);ctx.shadowColor="transparent";ctx.fillStyle="rgba(255,255,255,.09)";ctx.beginPath();ctx.moveTo(px-w/2+15,py-h/2);ctx.lineTo(px+w/2,py-h/2+15);ctx.lineTo(px+w/2,py+h/2);ctx.lineTo(px-w/2,py+h/2);ctx.closePath();ctx.fill()}
+else rr(px-w/2,py-h/2,w,h,17,"#10243b",n.color);
+ctx.fillStyle=n.color;ctx.font="bold 26px system-ui";ctx.fillText(n.name.slice(0,22),px,py-23);ctx.fillStyle="white";ctx.font="18px system-ui";ctx.fillText(n.detail.slice(0,34),px,py+8);
+if(n.img){ctx.save();ctx.beginPath();ctx.roundRect(px-36,py+22,72,38,5);ctx.clip();ctx.drawImage(n.img,px-36,py+22,72,38);ctx.restore()}ctx.restore()});
+ctx.fillStyle="#90a8c5";ctx.font="16px system-ui";ctx.fillText(is3d?"3D LOOK • AUTO EXPLAINER":"2D MOTION GRAPHICS",640,690)}
+function animate(){let s=performance.now(),dur=Math.max(10,+$("duration").value||60);function f(now){let t=(now-s)/1000;draw(t);if(t<dur)requestAnimationFrame(f)}requestAnimationFrame(f)}
+$("play").onclick=animate;$("auto").onclick=animate;$("style").onchange=()=>draw(99);$("layout").onchange=()=>draw(99);
+$("png").onclick=()=>{draw(99);let a=document.createElement("a");a.download="animated-explainer-preview.png";a.href=c.toDataURL();a.click()};
+$("export").onclick=()=>{if(!window.MediaRecorder){$("status").textContent="इस ब्राउज़र में वीडियो रिकॉर्डिंग उपलब्ध नहीं है।";return}let stream=c.captureStream(30),rec=new MediaRecorder(stream),chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onstop=()=>{let u=URL.createObjectURL(new Blob(chunks,{type:"video/webm"})),a=document.createElement("a");a.href=u;a.download="explainer-animation.webm";a.click();$("status").textContent="वीडियो डाउनलोड हो गया! MP4 के लिए CapCut में खोलकर Export करें।"};rec.start();$("status").textContent="रिकॉर्डिंग चल रही है… पेज खुला रखें।";animate();setTimeout(()=>{if(rec.state!=="inactive")rec.stop()},Math.max(10,+$("duration").value||60)*1000+300)}
+editors();draw(99);
+</script></body></html>
